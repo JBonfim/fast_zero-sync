@@ -11,9 +11,7 @@ from fast_zero.app import app
 from fast_zero.database import get_session
 from fast_zero.models import table_registry
 from fast_zero.security import get_password_hash
-from fast_zero.settings import Settings
 from tests.factories import UserFactory
-
 
 # @pytest.fixture
 # def session():
@@ -39,8 +37,6 @@ from tests.factories import UserFactory
 #         yield session
 
 #     table_registry.metadata.drop_all(engine)
-
-
 
 
 @pytest.fixture(scope='session')
