@@ -18,7 +18,7 @@ jobs:
       - name: Instalar o python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
       - name: Instalar o poetry
         run: pipx install poetry
@@ -28,4 +28,3 @@ jobs:
 
       - name: Executar testes
         run: poetry run task test
-        
