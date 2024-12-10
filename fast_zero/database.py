@@ -7,5 +7,7 @@ engine = create_engine(Settings().DATABASE_URL)
 
 
 def get_session():
+    print(Settings().DATABASE_URL)
+    print(engine)
     with Session(engine) as session:
         yield session
