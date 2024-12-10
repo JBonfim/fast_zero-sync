@@ -5,12 +5,51 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
+from testcontainers.postgres import PostgresContainer
 
 from fast_zero.app import app
 from fast_zero.database import get_session
-from fast_zero.models import User, table_registry
+from fast_zero.models import table_registry
 from fast_zero.security import get_password_hash
+from fast_zero.settings import Settings
+from tests.factories import UserFactory
+
+
+# @pytest.fixture
+# def session():
+#     engine = create_engine(
+#         'sqlite:///:memory:',
+#         connect_args={'check_same_thread': False},
+#         poolclass=StaticPool,
+#     )
+#     table_registry.metadata.create_all(engine)
+
+#     with Session(engine) as session:
+#         yield session
+
+#     table_registry.metadata.drop_all(engine)
+
+
+# @pytest.fixture
+# def session():
+#     engine = create_engine(Settings().DATABASE_URL)
+#     table_registry.metadata.create_all(engine)
+
+#     with Session(engine) as session:
+#         yield session
+
+#     table_registry.metadata.drop_all(engine)
+
+
+
+
+@pytest.fixture(scope='session')
+def engine():
+    with PostgresContainer('postgres:16', driver='psycopg') as postgres:
+        _engine = create_engine(postgres.get_connection_url())
+
+        with _engine.begin():
+            yield _engine
 
 
 @pytest.fixture
@@ -26,16 +65,12 @@ def client(session):
 
 
 @pytest.fixture
-def session():
-    engine = create_engine(
-        'sqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool,
-    )
+def session(engine):
     table_registry.metadata.create_all(engine)
 
     with Session(engine) as session:
         yield session
+        session.rollback()
 
     table_registry.metadata.drop_all(engine)
 
@@ -63,11 +98,22 @@ def mock_db_time():
 @pytest.fixture
 def user(session):
     password = 'testtest'
-    user = User(
-        username='Teste',
-        email='teste@test.com',
-        password=get_password_hash(password),
-    )
+    user = UserFactory(password=get_password_hash(password))
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    user.clean_password = password
+
+    return user
+
+
+@pytest.fixture
+def other_user(session):
+    password = 'testtest'
+    user = UserFactory(password=get_password_hash(password))
+
     session.add(user)
     session.commit()
     session.refresh(user)
